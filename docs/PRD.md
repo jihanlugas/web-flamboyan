@@ -37,11 +37,30 @@ Dokumen ini menjadi acuan kebutuhan produk, ruang lingkup, dan kriteria keberhas
 
 | ID | Kebutuhan | Prioritas | Kriteria penerimaan |
 |---|---|---|---|
-| FR-1 | Pengguna dapat mengatur harga lapangan dan harga bola melalui modal Setting. | Tinggi | Memilih Setting membuka modal dengan isian harga lapangan dan harga bola. Pengguna dapat menyimpan atau membatalkan perubahan. |
-| FR-2 | Pengguna dapat menambahkan pemain melalui modal Add Pemain. | Tinggi | Memilih Add Pemain membuka modal untuk mengisi data pemain baru; pemain ditambahkan ke daftar setelah formulir dikonfirmasi. |
-| FR-3 | Halaman menampilkan daftar pemain dan menyediakan tombol untuk mengelola pemain. | Tinggi | Daftar pemain dan kontrol pengelolaan tersedia di area utama halaman. Aksi pengelolaan yang didukung akan ditentukan lebih lanjut. |
+| FR-1 | Pengguna dapat mengatur harga lapangan dan harga shuttle melalui modal Setting. | Tinggi | Pengguna dapat menyimpan atau membatalkan perubahan harga bersama yang digunakan untuk menghitung biaya semua pemain. |
+| FR-2 | Pengguna dapat menambah dan mengubah data pemain: nama, jumlah shuttle, dan jumlah yang sudah dibayar. | Tinggi | Setelah formulir dikonfirmasi, data pemain disimpan dan total biaya dihitung otomatis dengan rumus `courtPrice + (shuttlePrice × shuttleCount)`. |
+| FR-3 | Halaman menampilkan setiap pemain dalam panel collapsible dengan kontrol untuk mengelola pemain. | Tinggi | Header panel menampilkan nama pemain di kiri dan `totalPrice` di kanan. Saat dibuka, panel menampilkan nama, jumlah shuttle, harga lapangan, harga shuttle, total biaya, nominal dibayar, sisa tagihan, serta aksi edit/hapus. |
 | FR-4 | Pengguna dapat memulai reset pengaturan dan data pemain. | Tinggi | Memilih Reset membuka modal konfirmasi yang menjelaskan bahwa pengaturan dan data pemain akan direset. Reset hanya dijalankan setelah dikonfirmasi. |
-| FR-5 | Halaman menampilkan ringkasan dan menyediakan fitur ekspor. | Tinggi | Ringkasan dan kontrol ekspor tersedia di bagian bawah area utama halaman. Isi ringkasan dan format ekspor ditentukan lebih lanjut. |
+| FR-5 | Halaman menampilkan ringkasan tagihan, pembayaran, dan kontrol ekspor. | Tinggi | Ringkasan menampilkan jumlah pemain, jumlah shuttle, total tagihan pemain, total dibayar, dan sisa tagihan. Format ekspor ditentukan lebih lanjut. |
+
+### Model data utama
+
+```json
+{
+	"courtPrice": 0,
+	"shuttlePrice": 0,
+	"players": [
+		{
+			"name": "",
+			"shuttleCount": 0,
+			"totalPrice": 0,
+			"paid": 0
+		}
+	]
+}
+```
+
+`totalPrice` dihitung untuk setiap pemain dengan rumus `courtPrice + (shuttlePrice × shuttleCount)`. Nilai `paid` mencatat pembayaran pemain; sisa tagihan adalah `totalPrice - paid`.
 
 ### Kebutuhan nonfungsional
 
@@ -57,25 +76,25 @@ Dokumen ini menjadi acuan kebutuhan produk, ruang lingkup, dan kriteria keberhas
 Halaman utama terdiri dari dua area: header dan body.
 
 - **Header:** nama aplikasi berada di sebelah kiri. Di sebelah kanan terdapat menu Setting, Add Pemain, dan Reset.
-- **Body:** menampilkan daftar pemain beserta tombol yang diperlukan untuk mengelola pemain. Di bagian paling bawah body terdapat ringkasan dan kontrol ekspor.
+- **Body:** langsung menampilkan daftar pemain dalam panel collapsible, tanpa heading daftar terpisah. Setiap header panel menampilkan nama pemain di kiri dan total biaya sesi di kanan. Bagian panel yang dibuka menampilkan rincian biaya dan aksi edit/hapus. Di bagian paling bawah body terdapat ringkasan biaya dan kontrol ekspor.
 
 ### Interaksi utama
 
-- **Setting:** membuka modal untuk mengisi dan menyimpan harga lapangan serta harga bola, atau membatalkan perubahan.
-- **Add Pemain:** membuka modal untuk mengisi data pemain baru dan menambahkannya ke daftar.
+- **Setting:** membuka modal untuk mengisi dan menyimpan harga lapangan serta harga shuttle, atau membatalkan perubahan.
+- **Add Pemain:** membuka modal untuk mengisi nama, jumlah shuttle, dan jumlah yang sudah dibayar; total biaya dihitung otomatis.
 - **Reset:** membuka modal konfirmasi sebelum pengaturan dan data pemain direset.
-- **Pengelolaan pemain:** pengguna mengelola pemain dari tombol yang tersedia pada area daftar pemain; jenis aksi perlu dikonfirmasi.
-- **Ringkasan dan ekspor:** pengguna meninjau ringkasan di bagian bawah halaman dan dapat memulai ekspor data.
+- **Pengelolaan pemain:** pengguna membuka panel pemain untuk melihat rincian harga, total biaya, jumlah yang sudah dibayar, dan sisa tagihan; pengguna dapat mengedit data atau menghapus pemain.
+- **Ringkasan dan ekspor:** pengguna meninjau total tagihan semua pemain, total pembayaran, dan sisa tagihan di bagian bawah halaman. Kontrol ekspor tersedia; format ekspor belum ditentukan.
 
 ## 7. Ruang Lingkup
 
 ### Termasuk
 
 - Header dengan nama aplikasi dan menu Setting, Add Pemain, serta Reset.
-- Modal pengaturan harga lapangan dan harga bola.
-- Modal untuk menambahkan pemain.
+- Modal pengaturan harga lapangan dan harga shuttle.
+- Modal untuk menambah dan mengubah nama, jumlah shuttle, serta pembayaran pemain.
 - Modal konfirmasi reset pengaturan dan data pemain.
-- Daftar pemain dengan kontrol pengelolaan.
+- Daftar pemain dalam panel collapsible dengan rincian biaya dan kontrol edit/hapus.
 - Ringkasan dan ekspor di bagian bawah area utama.
 
 ### Tidak termasuk
@@ -101,10 +120,7 @@ Tahapan pengembangan, peluncuran, dan evaluasi belum ditentukan.
 ## 11. Pertanyaan Terbuka
 
 - Apa nama aplikasi yang akan ditampilkan di header?
-- Aksi apa saja yang perlu tersedia untuk mengelola pemain dari daftar?
-- Informasi apa yang ditampilkan dalam ringkasan?
 - Format ekspor apa yang diperlukan dan data apa saja yang disertakan?
-- Apakah perubahan harga dan data pemain perlu tetap tersimpan setelah halaman ditutup atau dimuat ulang?
 - Siapa pengguna sasaran dan masalah utama yang mereka hadapi?
 - Bagaimana keberhasilan produk akan diukur?
 - Apakah ada batasan teknis, jadwal, atau integrasi yang perlu dipertimbangkan?
