@@ -145,6 +145,22 @@ input:focus-visible {
   padding: 70px 0 64px;
 }
 
+.storage-message {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #e8b9a9;
+  border-radius: 6px;
+  background: #fff3ee;
+  color: #873a2a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .page-heading {
   display: flex;
   align-items: end;
@@ -483,15 +499,25 @@ input:focus-visible {
   border-color: rgba(255, 255, 255, 0.3);
   background: transparent;
   color: #fff;
+  text-decoration: none;
 }
 
-.button-export:disabled {
+.button-export[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.55;
+  pointer-events: none;
 }
 
 .cost-breakdown {
   align-self: center;
+}
+
+.summary-unavailable {
+  margin: 0;
+  align-self: center;
+  color: #d0e0d4;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .cost-line,
@@ -579,6 +605,13 @@ input:focus-visible {
 .modal-form {
   display: grid;
   gap: 18px;
+}
+
+.field-error {
+  margin: 0;
+  color: #a54632;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .field-label {
