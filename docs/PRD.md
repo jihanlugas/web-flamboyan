@@ -30,7 +30,7 @@ Penyelenggara atau peserta yang bertugas mencatat biaya dan pembayaran sesi maba
 
 - Satu halaman dengan header, pengaturan, daftar pemain, ringkasan, dan tombol laporan WhatsApp.
 - Satu sesi aktif yang disimpan secara lokal.
-- Pengaturan harga lapangan dan harga bola.
+- Pengaturan harga lapangan, harga bola, dan fitur pencatatan jumlah bermain.
 - Penambahan dan pengubahan data pemain, termasuk nama, jumlah bermain, jumlah bola, dan pembayaran.
 - Daftar pemain dalam panel collapsible dengan rincian biaya serta aksi edit dan hapus.
 - Perhitungan biaya dan ringkasan secara otomatis.
@@ -45,27 +45,27 @@ Penyelenggara atau peserta yang bertugas mencatat biaya dan pembayaran sesi maba
 
 ## 5. Alur Penggunaan
 
-1. Pengguna membuka menu Setting dan mengatur harga lapangan serta harga bola.
-2. Pengguna menambahkan pemain melalui menu Add Pemain.
-3. Pengguna memasukkan nama, jumlah bermain, jumlah bola yang digunakan, dan jumlah pembayaran.
+1. Pengguna membuka menu Setting dan mengatur harga lapangan, harga bola, serta fitur jumlah bermain.
+2. Pengguna menambahkan pemain melalui menu Tambah pemain dengan memasukkan nama.
+3. Pengguna mengubah jumlah bola dan, jika diaktifkan, jumlah bermain melalui tombol pada rincian kartu. Pembayaran dapat diubah melalui modal edit pemain.
 4. Aplikasi menghitung biaya dan menampilkan pemain serta ringkasan sesi.
 5. Pengguna membuka panel pemain untuk meninjau rincian, mengedit data, atau menghapus pemain.
 6. Pengguna menekan tombol laporan WhatsApp dan memilih kontak atau grup tujuan di WhatsApp.
-7. Untuk mabar berikutnya, pengguna mereset data pemain setelah konfirmasi; harga lapangan dan harga bola tetap dipertahankan.
+7. Untuk mabar berikutnya, pengguna mereset data pemain setelah konfirmasi; harga dan pengaturan fitur tetap dipertahankan.
 
 ## 6. Kebutuhan Fungsional
 
 | ID | Kebutuhan | Prioritas | Kriteria penerimaan |
 |---|---|---|---|
-| FR-01 | Aplikasi menyediakan satu halaman dengan header dan menu utama. | Tinggi | Nama aplikasi tampil di kiri header; menu Setting, Add Pemain, dan Reset tersedia di kanan tanpa berpindah halaman. |
-| FR-02 | Pengguna dapat mengatur harga lapangan dan harga bola melalui modal Setting. | Tinggi | Pengguna dapat menyimpan atau membatalkan perubahan. Perubahan harga memperbarui biaya pemain dan ringkasan berdasarkan data sesi saat ini. Harga lapangan boleh bernilai 0; inputnya tetap tersedia di Setting, tetapi harga lapangan tidak ditampilkan di bagian halaman lain atau laporan WhatsApp saat bernilai 0. |
-| FR-03 | Pengguna dapat menambahkan dan mengubah data pemain. | Tinggi | Modal Add Pemain/Edit Pemain menerima nama, jumlah bermain, jumlah bola, dan jumlah pembayaran. Setelah dikonfirmasi, perubahan tersimpan dan perhitungan terkait diperbarui. |
-| FR-04 | Halaman menampilkan pemain dalam panel collapsible. | Tinggi | Header setiap panel menampilkan nama pemain di kiri dan total biaya di kanan. Saat dibuka, panel menampilkan nama, jumlah bermain, jumlah bola, harga lapangan (jika lebih dari 0), harga bola, total biaya, jumlah dibayar, sisa/kelebihan pembayaran, serta aksi edit dan hapus. |
+| FR-01 | Aplikasi menyediakan satu halaman dengan header dan menu utama. | Tinggi | Nama aplikasi tampil di kiri header; menu Setting, Tambah pemain, dan Reset tersedia di kanan tanpa berpindah halaman. |
+| FR-02 | Pengguna dapat mengatur harga dan fitur jumlah bermain melalui modal Setting. | Tinggi | Pengguna dapat menyimpan atau membatalkan perubahan. Harga lapangan boleh 0 dan tidak ditampilkan di luar Setting atau laporan jika 0. Checkbox jumlah bermain awalnya nonaktif, termasuk untuk data lama; pilihan disimpan dan dapat dibatalkan sebelum penyimpanan. |
+| FR-03 | Pengguna dapat menambahkan dan mengubah data pemain. | Tinggi | Modal tambah hanya menerima nama; jumlah bermain, jumlah bola, dan pembayaran pemain baru bernilai 0. Modal edit menerima nama dan pembayaran tanpa mengubah jumlah yang tercatat. |
+| FR-04 | Halaman menampilkan pemain dalam panel collapsible. | Tinggi | Header menampilkan nama dan total biaya tanpa nomor urut. Rincian menampilkan biaya, pembayaran, dan kontrol jumlah bola; kontrol jumlah bermain hanya tampil jika fitur aktif. Tombol + dan - mengubah nilai satu per satu tanpa nilai negatif atau input langsung. |
 | FR-05 | Aplikasi menghitung biaya dan sisa pembayaran setiap pemain. | Tinggi | Perhitungan mengikuti rumus pada bagian 7. Jumlah bermain dicatat, tetapi tidak mengalikan harga lapangan. Pembayaran yang melebihi biaya tetap tercatat dan sisa pembayaran dapat bernilai negatif. |
 | FR-06 | Ringkasan sesi ditampilkan di bagian bawah halaman. | Tinggi | Ringkasan memuat jumlah pemain, jumlah bola, total biaya keseluruhan, total bayar, dan sisa/kelebihan pembayaran. |
 | FR-07 | Pengguna dapat membagikan laporan sesi melalui WhatsApp. | Tinggi | Tombol laporan membuka WhatsApp dengan teks berisi ringkasan serta detail setiap pemain. Pengguna memilih kontak atau grup dan mengirimkan laporan di WhatsApp. |
-| FR-08 | Data sesi disimpan dalam satu JSON di local storage. | Tinggi | Setelah halaman dimuat ulang atau dibuka kembali di peramban yang sama, harga dan data pemain yang telah disimpan dipulihkan. |
-| FR-09 | Pengguna dapat mereset data pemain untuk memulai sesi baru. | Tinggi | Aplikasi meminta konfirmasi sebelum menghapus seluruh pemain dan data mereka. Setelah dikonfirmasi, daftar pemain menjadi kosong sementara harga lapangan dan harga bola tetap dipertahankan. |
+| FR-08 | Data sesi disimpan dalam satu JSON di local storage. | Tinggi | Setelah halaman dimuat ulang atau dibuka kembali di peramban yang sama, harga, pengaturan fitur, dan data pemain yang telah disimpan dipulihkan. Menonaktifkan fitur tidak menghapus jumlah bermain. |
+| FR-09 | Pengguna dapat mereset data pemain untuk memulai sesi baru. | Tinggi | Aplikasi meminta konfirmasi sebelum menghapus seluruh pemain dan data mereka. Setelah dikonfirmasi, daftar pemain menjadi kosong sementara harga dan pengaturan fitur tetap dipertahankan. |
 
 ### Validasi dan penanganan data
 
@@ -102,10 +102,10 @@ Sisa bayar positif menunjukkan kekurangan pembayaran; nilai nol berarti lunas; n
 
 Halaman utama terdiri dari header dan area utama:
 
-- **Header:** nama aplikasi berada di sebelah kiri. Di sebelah kanan terdapat menu Setting, Add Pemain, dan Reset.
-- **Setting:** modal untuk mengisi dan menyimpan harga lapangan serta harga bola, atau membatalkan perubahan.
-- **Add Pemain/Edit Pemain:** modal untuk mengisi atau mengubah nama, jumlah bermain, jumlah bola, dan jumlah yang sudah dibayar. Total biaya dihitung otomatis.
-- **Daftar pemain:** langsung ditampilkan di area utama tanpa heading daftar terpisah. Setiap pemain memiliki panel collapsible; header menampilkan nama di kiri dan total biaya di kanan. Bagian panel yang dibuka menampilkan rincian biaya dan aksi edit/hapus.
+- **Header:** nama aplikasi berada di sebelah kiri. Di sebelah kanan terdapat menu Setting, Tambah pemain, dan Reset.
+- **Setting:** modal untuk mengisi harga lapangan dan harga bola serta mengaktifkan atau menonaktifkan pencatatan jumlah bermain, dengan aksi simpan dan batal.
+- **Tambah/Edit pemain:** modal tambah hanya meminta nama; modal edit mengubah nama dan jumlah yang sudah dibayar. Total biaya dihitung otomatis.
+- **Daftar pemain:** langsung ditampilkan di area utama tanpa heading daftar terpisah. Header panel menampilkan nama dan total biaya tanpa nomor. Rincian menyediakan tombol + dan - untuk jumlah bola dan, jika fitur aktif, jumlah bermain; nilainya tidak dapat diketik atau menjadi negatif. Tombol dan checkbox dapat diakses melalui keyboard dan mudah digunakan di layar sentuh.
 - **Ringkasan:** berada di bagian paling bawah area utama dan menampilkan jumlah pemain, jumlah bola, total biaya keseluruhan, total bayar, serta sisa/kelebihan pembayaran.
 - **Aksi:** tombol laporan WhatsApp dan Reset tersedia pada halaman.
 
@@ -116,13 +116,13 @@ Jika harga lapangan bernilai 0, inputnya tetap dapat diakses di Setting, tetapi 
 Laporan berbentuk teks yang mencakup:
 
 - Harga bola yang digunakan, serta harga lapangan hanya jika nilainya lebih dari 0.
-- Untuk setiap pemain: nama, jumlah bermain, jumlah bola, total biaya, jumlah bayar, dan sisa bayar atau kelebihan pembayaran.
+- Untuk setiap pemain: nama, jumlah bola, total biaya, jumlah bayar, dan sisa bayar atau kelebihan pembayaran. Jumlah bermain dicantumkan hanya jika fitur tersebut aktif.
 - Ringkasan sesi: jumlah pemain, jumlah bola, total biaya keseluruhan, total bayar, dan sisa bayar atau kelebihan pembayaran.
 
 ## 9. Penyimpanan dan Kebutuhan Nonfungsional
 
 - Seluruh data sesi diserialisasi sebagai **satu objek JSON** dalam **satu entri local storage**.
-- JSON menyimpan harga lapangan, harga bola, serta daftar pemain dengan nama, jumlah bermain, jumlah bola, dan jumlah pembayaran. Total dihitung dari data tersebut.
+- JSON menyimpan harga lapangan, harga bola, status fitur jumlah bermain, serta daftar pemain dengan nama, jumlah bermain, jumlah bola, dan jumlah pembayaran. Data lama tanpa status fitur dianggap nonaktif. Total dihitung dari data tersebut.
 - Data hanya tersedia pada peramban dan perangkat tempat data disimpan. Menghapus data peramban dapat menghapus data sesi.
 - Antarmuka perlu dapat digunakan di perangkat seluler dan desktop.
 - Berbagi laporan memerlukan akses ke WhatsApp dan koneksi yang sesuai; aplikasi tidak otomatis mengirim pesan tanpa tindakan pengguna.
@@ -136,6 +136,7 @@ Berikut gambaran satu sesi yang disimpan sebagai nilai satu entri local storage:
 {
   "courtPrice": 0,
   "shuttlecockPrice": 5000,
+  "gamesPlayedEnabled": true,
   "players": [
     {
       "id": "pemain-1",
@@ -156,17 +157,18 @@ Berikut gambaran satu sesi yang disimpan sebagai nilai satu entri local storage:
 ```
 
 - `courtPrice` dan `shuttlecockPrice` adalah harga dalam rupiah tanpa desimal.
+- `gamesPlayedEnabled` menentukan apakah jumlah bermain ditampilkan di kartu dan laporan.
 - `id` membedakan setiap pemain, termasuk pemain dengan nama yang sama.
 - `gamesPlayed` dan `shuttlecocksUsed` adalah jumlah dalam bilangan bulat; `amountPaid` adalah nominal yang telah dibayar dalam rupiah.
 - Total tidak disimpan dalam JSON, tetapi dihitung ulang dari harga dan data pemain. Pada contoh di atas, biaya Andi Rp10.000 dan Budi Rp15.000; total biaya Rp25.000, total bayar Rp20.000, dan sisa bayar Rp5.000.
-- Setelah reset yang dikonfirmasi, `players` menjadi daftar kosong, sedangkan `courtPrice` dan `shuttlecockPrice` tetap dipertahankan.
+- Setelah reset yang dikonfirmasi, `players` menjadi daftar kosong, sedangkan harga dan `gamesPlayedEnabled` tetap dipertahankan.
 
 ## 10. Kriteria Keberhasilan
 
 - Pengguna dapat menyelesaikan alur pencatatan dari pengaturan hingga laporan tanpa berpindah halaman aplikasi.
 - Hasil perhitungan pemain dan ringkasan sesuai rumus pada bagian 7, termasuk saat terjadi kelebihan pembayaran.
 - Data yang berhasil disimpan dapat dipulihkan setelah halaman dimuat ulang.
-- Laporan WhatsApp memuat seluruh detail pemain dan ringkasan sesi.
+- Laporan WhatsApp memuat detail pemain dan ringkasan sesi; jumlah bermain hanya disertakan jika fitur aktif.
 - Saat harga lapangan 0, inputnya tetap dapat diakses di Setting, tetapi harga tersebut tidak ditampilkan di bagian halaman lainnya maupun laporan WhatsApp.
 
 ## 11. Asumsi, Ketergantungan, dan Risiko

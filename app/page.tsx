@@ -21,6 +21,7 @@ type SavedData = {
   players: Player[];
   courtPrice: number;
   shuttlecockPrice: number;
+  gamesPlayedEnabled: boolean;
 };
 
 type ParsedSavedData = {
@@ -30,14 +31,13 @@ type ParsedSavedData = {
 
 type PlayerDraft = {
   name: string;
-  gamesPlayed: number;
-  shuttlecocksUsed: number;
   amountPaid: number;
 };
 
 type PriceDraft = {
   courtPrice: number;
   shuttlecockPrice: number;
+  gamesPlayedEnabled: boolean;
 };
 
 const storageKey = 'main-bareng-data-v1';
@@ -45,14 +45,13 @@ const storageChangeEvent = 'main-bareng-data-change';
 const storageReadErrorSnapshot = '__main_bareng_storage_read_error__';
 const emptyPlayerDraft: PlayerDraft = {
   name: '',
-  gamesPlayed: 0,
-  shuttlecocksUsed: 0,
   amountPaid: 0,
 };
 const emptySavedData: SavedData = {
   players: [],
   courtPrice: 0,
   shuttlecockPrice: 0,
+  gamesPlayedEnabled: false,
 };
 const currencyFormatter = new Intl.NumberFormat('id-ID', {
   style: 'currency',
@@ -122,11 +121,20 @@ const parseSavedData = (snapshot: string | null): ParsedSavedData => {
   const courtPrice = parsedData.courtPrice ?? legacyPrices.court ?? 0;
   const shuttlecockPrice =
     parsedData.shuttlecockPrice ?? parsedData.shuttlePrice ?? legacyPrices.ball ?? 0;
+  const gamesPlayedEnabled =
+    parsedData.gamesPlayedEnabled === undefined ? false : parsedData.gamesPlayedEnabled;
 
   if (!isNonNegativeInteger(courtPrice) || !isNonNegativeInteger(shuttlecockPrice)) {
     return {
       data: emptySavedData,
       error: 'Harga pada data sesi harus bilangan bulat nol atau lebih. Data lama tidak diubah.',
+    };
+  }
+
+  if (typeof gamesPlayedEnabled !== 'boolean') {
+    return {
+      data: emptySavedData,
+      error: 'Pengaturan jumlah bermain tidak valid. Data lama tidak diubah.',
     };
   }
 
@@ -181,6 +189,7 @@ const parseSavedData = (snapshot: string | null): ParsedSavedData => {
       players,
       courtPrice,
       shuttlecockPrice,
+      gamesPlayedEnabled,
     },
     error: null,
   };
@@ -219,7 +228,11 @@ const createWhatsAppReport = (data: SavedData) => {
       const balance = totalCost - player.amountPaid;
       lines.push(
         `${index + 1}. ${player.name}`,
-        `   Jumlah bermain: ${player.gamesPlayed}`,
+      );
+      if (data.gamesPlayedEnabled) {
+        lines.push(`   Jumlah bermain: ${player.gamesPlayed}`);
+      }
+      lines.push(
         `   Jumlah bola: ${player.shuttlecocksUsed}`,
         `   Total biaya: ${formatCurrency(totalCost)}`,
         `   Pembayaran: ${formatCurrency(player.amountPaid)}`,
@@ -252,6 +265,42 @@ const createWhatsAppReport = (data: SavedData) => {
   return `https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`;
 };
 
+type CounterProps = {
+  label: string;
+  playerName: string;
+  value: number;
+  onChange: (change: -1 | 1) => void;
+};
+
+const Counter = ({ label, playerName, value, onChange }: CounterProps) => (
+  <div className="counter">
+    <button
+      aria-label={`Kurangi ${label.toLowerCase()} ${playerName}`}
+      disabled={value === 0}
+      onClick={() => onChange(-1)}
+      type="button"
+    >
+      −
+    </button>
+    <input
+      aria-label={`${label} ${playerName}`}
+      min="0"
+      readOnly
+      style={{ width: `${Math.max(3, String(value).length)}ch` }}
+      type="number"
+      value={value}
+    />
+    <button
+      aria-label={`Tambah ${label.toLowerCase()} ${playerName}`}
+      disabled={value === Number.MAX_SAFE_INTEGER}
+      onClick={() => onChange(1)}
+      type="button"
+    >
+      +
+    </button>
+  </div>
+);
+
 export default function Home() {
   const savedDataSnapshot = useSyncExternalStore(
     subscribeToSavedData,
@@ -259,10 +308,11 @@ export default function Home() {
     getServerSnapshot,
   );
   const parsedSavedData = parseSavedData(savedDataSnapshot);
-  const { players, courtPrice, shuttlecockPrice } = parsedSavedData.data;
+  const { players, courtPrice, shuttlecockPrice, gamesPlayedEnabled } = parsedSavedData.data;
   const [priceDraft, setPriceDraft] = useState<PriceDraft>({
     courtPrice: 0,
     shuttlecockPrice: 0,
+    gamesPlayedEnabled: false,
   });
   const [playerDraft, setPlayerDraft] = useState<PlayerDraft>(emptyPlayerDraft);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -290,7 +340,7 @@ export default function Home() {
   };
 
   const openSettings = () => {
-    setPriceDraft({ courtPrice, shuttlecockPrice });
+    setPriceDraft({ courtPrice, shuttlecockPrice, gamesPlayedEnabled });
     openDialog({ type: 'settings' });
   };
 
@@ -302,8 +352,6 @@ export default function Home() {
   const openEditPlayer = (player: Player) => {
     setPlayerDraft({
       name: player.name,
-      gamesPlayed: player.gamesPlayed,
-      shuttlecocksUsed: player.shuttlecocksUsed,
       amountPaid: player.amountPaid,
     });
     openDialog({ type: 'edit-player', playerId: player.id });
@@ -330,19 +378,13 @@ export default function Home() {
       return;
     }
 
-    if (
-      !isNonNegativeInteger(playerDraft.gamesPlayed) ||
-      !isNonNegativeInteger(playerDraft.shuttlecocksUsed) ||
-      !isNonNegativeInteger(playerDraft.amountPaid)
-    ) {
-      setDialogError('Jumlah bermain, jumlah bola, dan pembayaran harus bilangan bulat nol atau lebih.');
+    if (!isNonNegativeInteger(playerDraft.amountPaid)) {
+      setDialogError('Pembayaran harus bilangan bulat nol atau lebih.');
       return;
     }
 
     const playerData = {
       name,
-      gamesPlayed: playerDraft.gamesPlayed,
-      shuttlecocksUsed: playerDraft.shuttlecocksUsed,
       amountPaid: playerDraft.amountPaid,
     };
     const nextPlayers =
@@ -350,9 +392,9 @@ export default function Home() {
         ? players.map((player) =>
             player.id === dialog.playerId ? { ...player, ...playerData } : player,
           )
-        : [...players, { id: crypto.randomUUID(), ...playerData }];
+        : [...players, { id: crypto.randomUUID(), gamesPlayed: 0, shuttlecocksUsed: 0, ...playerData }];
 
-    persistData({ players: nextPlayers, courtPrice, shuttlecockPrice });
+    persistData({ ...parsedSavedData.data, players: nextPlayers });
   };
 
   const savePrices = (event: React.FormEvent<HTMLFormElement>) => {
@@ -370,14 +412,29 @@ export default function Home() {
   };
 
   const resetData = () => {
-    persistData({ players: [], courtPrice, shuttlecockPrice });
+    persistData({ ...parsedSavedData.data, players: [] });
   };
 
   const deletePlayer = (playerId: string) => {
     persistData({
+      ...parsedSavedData.data,
       players: players.filter((player) => player.id !== playerId),
-      courtPrice,
-      shuttlecockPrice,
+    });
+  };
+
+  const updatePlayerCount = (
+    playerId: string,
+    field: 'gamesPlayed' | 'shuttlecocksUsed',
+    change: -1 | 1,
+  ) => {
+    const player = players.find((item) => item.id === playerId);
+    if (!player || !isNonNegativeInteger(player[field] + change)) return;
+
+    persistData({
+      ...parsedSavedData.data,
+      players: players.map((item) =>
+        item.id === playerId ? { ...item, [field]: item[field] + change } : item,
+      ),
     });
   };
 
@@ -416,7 +473,7 @@ export default function Home() {
             onClick={openAddPlayer}
             type="button"
           >
-            <span aria-hidden="true">+</span> Add Pemain
+            <span aria-hidden="true">+</span> Tambah pemain
           </button>
           <button
             className="nav-button nav-button-reset"
@@ -458,7 +515,7 @@ export default function Home() {
             </div>
           ) : (
             <ul className="player-list">
-              {players.map((player, index) => {
+              {players.map((player) => {
                 const playerCost = getPlayerCost(player, parsedSavedData.data);
                 const playerBalance = playerCost - player.amountPaid;
 
@@ -466,7 +523,6 @@ export default function Home() {
                   <li className="player-list-item" key={player.id}>
                     <details className="player-collapsible">
                       <summary className="player-collapsible-header">
-                        <span className="player-index">{String(index + 1).padStart(2, '0')}</span>
                         <span className="player-avatar" aria-hidden="true">
                           {player.name.charAt(0).toUpperCase()}
                         </span>
@@ -493,13 +549,29 @@ export default function Home() {
                             <dt>Harga per bola</dt>
                             <dd>{formatCurrency(shuttlecockPrice)}</dd>
                           </div>
-                          <div>
-                            <dt>Jumlah bermain</dt>
-                            <dd>{player.gamesPlayed}</dd>
-                          </div>
-                          <div>
+                          {gamesPlayedEnabled && (
+                            <div className="player-count-row">
+                              <dt>Jumlah bermain</dt>
+                              <dd>
+                                <Counter
+                                  label="Jumlah bermain"
+                                  playerName={player.name}
+                                  value={player.gamesPlayed}
+                                  onChange={(change) => updatePlayerCount(player.id, 'gamesPlayed', change)}
+                                />
+                              </dd>
+                            </div>
+                          )}
+                          <div className="player-count-row">
                             <dt>Jumlah bola</dt>
-                            <dd>{player.shuttlecocksUsed}</dd>
+                            <dd>
+                              <Counter
+                                label="Jumlah bola"
+                                playerName={player.name}
+                                value={player.shuttlecocksUsed}
+                                onChange={(change) => updatePlayerCount(player.id, 'shuttlecocksUsed', change)}
+                              />
+                            </dd>
                           </div>
                           <div>
                             <dt>Total harga bola</dt>
@@ -633,9 +705,9 @@ export default function Home() {
             {dialog.type === 'settings' && (
               <>
                 <p className="eyebrow">PENGATURAN</p>
-                <h2 id="dialog-title">Pengaturan harga</h2>
+                <h2 id="dialog-title">Pengaturan</h2>
                 <p className="modal-description">
-                  Tentukan harga lapangan dan harga untuk setiap bola.
+                  Tentukan harga dan fitur pencatatan.
                 </p>
                 <form className="modal-form" onSubmit={savePrices}>
                   <label className="field-label" htmlFor="court-price">
@@ -679,6 +751,20 @@ export default function Home() {
                       />
                     </span>
                   </label>
+                  <label className="checkbox-label" htmlFor="games-played-enabled">
+                    <input
+                      checked={priceDraft.gamesPlayedEnabled}
+                      id="games-played-enabled"
+                      onChange={(event) =>
+                        setPriceDraft((current) => ({
+                          ...current,
+                          gamesPlayedEnabled: event.target.checked,
+                        }))
+                      }
+                      type="checkbox"
+                    />
+                    Aktifkan pencatatan jumlah bermain
+                  </label>
                   {dialogError && <p className="field-error" role="alert">{dialogError}</p>}
                   <div className="modal-actions">
                     <button
@@ -689,7 +775,7 @@ export default function Home() {
                       Batal
                     </button>
                     <button className="button button-primary" type="submit">
-                      Simpan harga
+                      Simpan pengaturan
                     </button>
                   </div>
                 </form>
@@ -705,7 +791,9 @@ export default function Home() {
                   {dialog.type === 'add-player' ? 'Tambah pemain' : 'Edit pemain'}
                 </h2>
                 <p className="modal-description">
-                  Isi nama, jumlah bermain, jumlah bola, dan jumlah yang sudah dibayar.
+                  {dialog.type === 'add-player'
+                    ? 'Isi nama pemain untuk menambahkannya ke daftar.'
+                    : 'Ubah nama pemain dan jumlah yang sudah dibayar.'}
                 </p>
                 <form className="modal-form" onSubmit={savePlayer}>
                   <label className="field-label" htmlFor="new-player-name">
@@ -722,60 +810,28 @@ export default function Home() {
                       value={playerDraft.name}
                     />
                   </label>
-                  <label className="field-label" htmlFor="player-games-played">
-                    Jumlah bermain
-                    <input
-                      id="player-games-played"
-                      min="0"
-                      onChange={(event) =>
-                        setPlayerDraft((current) => ({
-                          ...current,
-                          gamesPlayed: Number(event.target.value) || 0,
-                        }))
-                      }
-                      required
-                      step="1"
-                      type="number"
-                      value={playerDraft.gamesPlayed}
-                    />
-                  </label>
-                  <label className="field-label" htmlFor="player-shuttlecocks-used">
-                    Jumlah bola
-                    <input
-                      id="player-shuttlecocks-used"
-                      min="0"
-                      onChange={(event) =>
-                        setPlayerDraft((current) => ({
-                          ...current,
-                          shuttlecocksUsed: Number(event.target.value) || 0,
-                        }))
-                      }
-                      required
-                      step="1"
-                      type="number"
-                      value={playerDraft.shuttlecocksUsed}
-                    />
-                  </label>
-                  <label className="field-label" htmlFor="player-amount-paid">
-                    Sudah dibayar
-                    <span className="input-wrap">
-                      <span>Rp</span>
-                      <input
-                        id="player-amount-paid"
-                        min="0"
-                        onChange={(event) =>
-                          setPlayerDraft((current) => ({
-                            ...current,
-                            amountPaid: Number(event.target.value) || 0,
-                          }))
-                        }
-                        required
-                        step="1"
-                        type="number"
-                        value={playerDraft.amountPaid}
-                      />
-                    </span>
-                  </label>
+                  {dialog.type === 'edit-player' && (
+                    <label className="field-label" htmlFor="player-amount-paid">
+                      Sudah dibayar
+                      <span className="input-wrap">
+                        <span>Rp</span>
+                        <input
+                          id="player-amount-paid"
+                          min="0"
+                          onChange={(event) =>
+                            setPlayerDraft((current) => ({
+                              ...current,
+                              amountPaid: Number(event.target.value) || 0,
+                            }))
+                          }
+                          required
+                          step="1"
+                          type="number"
+                          value={playerDraft.amountPaid}
+                        />
+                      </span>
+                    </label>
+                  )}
                   {dialogError && <p className="field-error" role="alert">{dialogError}</p>}
                   <div className="modal-actions">
                     <button
@@ -798,7 +854,7 @@ export default function Home() {
                 <p className="eyebrow eyebrow-danger">RESET DATA PEMAIN</p>
                 <h2 id="dialog-title">Reset sesi?</h2>
                 <p className="modal-description">
-                  Semua pemain dan data pembayaran akan dihapus. Harga lapangan dan harga bola tetap
+                  Semua pemain dan data pembayaran akan dihapus. Harga dan pengaturan fitur tetap
                   disimpan. Tindakan ini tidak dapat dibatalkan.
                 </p>
                 {dialogError && <p className="field-error" role="alert">{dialogError}</p>}

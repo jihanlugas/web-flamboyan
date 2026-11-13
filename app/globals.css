@@ -342,13 +342,6 @@ button:disabled {
   display: none;
 }
 
-.player-index {
-  width: 25px;
-  color: #8a958d;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-}
-
 .player-avatar {
   width: 36px;
   height: 36px;
@@ -439,6 +432,48 @@ button:disabled {
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.player-cost-details .player-count-row {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+}
+
+.counter button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid #cbd5cc;
+  border-radius: 6px;
+  background: #f5f7f4;
+  color: var(--green-deep);
+  font-size: 20px;
+}
+
+.counter button:hover:not(:disabled) {
+  background: #e4eee6;
+}
+
+.counter input {
+  min-width: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  appearance: textfield;
+}
+
+.counter input::-webkit-inner-spin-button,
+.counter input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
 .player-cost-details .player-cost-grand-total {
@@ -636,6 +671,24 @@ button:disabled {
   color: #9aa49c;
 }
 
+.checkbox-label {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #35433a;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  accent-color: var(--green);
+}
+
 .input-wrap {
   min-height: 44px;
   display: flex;
@@ -783,10 +836,6 @@ button:disabled {
     min-height: 66px;
     gap: 9px;
     padding: 10px 12px;
-  }
-
-  .player-index {
-    width: 20px;
   }
 
   .player-avatar {
