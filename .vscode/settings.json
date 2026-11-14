@@ -2,6 +2,12 @@
   "chat.tools.terminal.autoApprove": {
     "git remote": true,
     "gh": true,
-    "test": true
+    "test": true,
+    "npx --no-install next": true,
+    "/^node -e 'const p=\\{schemaVersion:5,triggerReason:\"unexpected-behavior\",title:\"Development server served stale CSS after a production build\",setup:\\{mode:\"development\",bundler:\"turbopack\",relevantFeatures:\\[\"Global CSS\"\\]\\},steps:\\[\"Start the development server and run a production build in the same project\\.\",\"Edit global CSS and load the page in a new browser context\\.\"\\],observed:\\[\"The rendered markup contained the new class names, but the served stylesheet did not contain their CSS rules\\.\"\\],expected:\"The development server should serve the current CSS rules after changes\\.\",comparison:\"Restarting the development server made the new CSS rules available\\.\",frequency:\"once\",outcome:\"worked-around\",nextVersion:\"16\\.4\\.6\",agent:\"GitHub Copilot\"\\};console\\.log\\(\"https://nextjs\\.org/agent-feedback#report=\"\\+Buffer\\.from\\(JSON\\.stringify\\(p\\)\\)\\.toString\\(\"base64url\"\\)\\)'$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "git push": true
   }
 }
