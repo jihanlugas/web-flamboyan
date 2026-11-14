@@ -432,6 +432,18 @@ export default function Home() {
     });
   };
 
+  const markPlayerPaid = (player: Player) => {
+    const total = getPlayerCost(player, parsedSavedData.data);
+    if (storageReadBlocked || !isNonNegativeInteger(total) || player.amountPaid >= total) return;
+
+    persistData({
+      ...parsedSavedData.data,
+      players: players.map((item) =>
+        item.id === player.id ? { ...item, amountPaid: total } : item,
+      ),
+    });
+  };
+
   const updatePlayerCount = (
     playerId: string,
     field: 'gamesPlayed' | 'shuttlecocksUsed',
@@ -533,73 +545,116 @@ export default function Home() {
                   <li className="player-list-item" key={player.id}>
                     <details className="player-collapsible">
                       <summary className="player-collapsible-header">
-                        <span className="player-avatar" aria-hidden="true">
-                          {player.name.charAt(0).toUpperCase()}
-                        </span>
                         <span className="player-name">{player.name}</span>
                         <span className="player-total">
-                          <span className="player-total-label">Total biaya</span>
-                          <strong>{formatCurrency(playerCost)}</strong>
+                          <strong aria-label={`Total biaya ${formatCurrency(playerCost)}`}>{formatCurrency(playerCost)}</strong>
+                          {(playerBalance !== 0 || playerCost > 0) && (
+                            <span
+                              aria-label={playerBalance === 0 ? undefined : getPaymentDescription(playerBalance)}
+                              className={`player-payment-status ${playerBalance > 0 ? 'is-unpaid' : 'is-paid'}`}
+                            >
+                              {playerBalance === 0 ? 'Lunas' : formatCurrency(Math.abs(playerBalance))}
+                            </span>
+                          )}
                         </span>
                         <span className="collapsible-chevron" aria-hidden="true" />
                       </summary>
                       <div className="player-details">
-                        <dl className="player-cost-details">
-                          <div>
-                            <dt>Nama pemain</dt>
-                            <dd>{player.name}</dd>
+                        <div className="player-details-grid">
+                          <section className="player-detail-section">
+                            <h3>Informasi pemain</h3>
+                            <dl className="player-cost-details">
+                              <div>
+                                <dt>Nama pemain</dt>
+                                <dd>{player.name}</dd>
+                              </div>
+                              {courtPrice > 0 && (
+                                <div>
+                                  <dt>Harga lapangan</dt>
+                                  <dd>{formatCurrency(courtPrice)}</dd>
+                                </div>
+                              )}
+                              <div>
+                                <dt>Harga per bola</dt>
+                                <dd>{formatCurrency(shuttlecockPrice)}</dd>
+                              </div>
+                            </dl>
+                          </section>
+                          <div className="player-detail-groups">
+                            <section className="player-detail-section">
+                              <h3>Jumlah</h3>
+                              <dl className="player-cost-details">
+                                {gamesPlayedEnabled && (
+                                  <div className="player-count-row">
+                                    <dt>Jumlah bermain</dt>
+                                    <dd>
+                                      <Counter
+                                        label="Jumlah bermain"
+                                        playerName={player.name}
+                                        value={player.gamesPlayed}
+                                        onChange={(change) => updatePlayerCount(player.id, 'gamesPlayed', change)}
+                                      />
+                                    </dd>
+                                  </div>
+                                )}
+                                <div className="player-count-row">
+                                  <dt>Jumlah bola</dt>
+                                  <dd>
+                                    <Counter
+                                      label="Jumlah bola"
+                                      playerName={player.name}
+                                      value={player.shuttlecocksUsed}
+                                      onChange={(change) => updatePlayerCount(player.id, 'shuttlecocksUsed', change)}
+                                    />
+                                  </dd>
+                                </div>
+                              </dl>
+                            </section>
+                            <section className="player-detail-section">
+                              <h3>Rincian harga</h3>
+                              <dl className="player-cost-details">
+                                {courtPrice > 0 && (
+                                  <div>
+                                    <dt>Harga lapangan</dt>
+                                    <dd>{formatCurrency(courtPrice)}</dd>
+                                  </div>
+                                )}
+                                <div>
+                                  <dt>Total harga bola</dt>
+                                  <dd>{formatCurrency(shuttlecockPrice * player.shuttlecocksUsed)}</dd>
+                                </div>
+                                <div className="player-cost-grand-total">
+                                  <dt>Total biaya</dt>
+                                  <dd>{formatCurrency(playerCost)}</dd>
+                                </div>
+                              </dl>
+                            </section>
+                            <section className="player-detail-section">
+                              <h3>Pembayaran</h3>
+                              <dl className="player-cost-details">
+                                <div>
+                                  <dt>Sudah dibayar</dt>
+                                  <dd>{formatCurrency(player.amountPaid)}</dd>
+                                </div>
+                                <div className="player-cost-grand-total">
+                                  <dt>{playerBalance === 0 ? 'Status pembayaran' : playerBalance > 0 ? 'Sisa pembayaran' : 'Kelebihan pembayaran'}</dt>
+                                  <dd>{playerBalance === 0 ? 'Lunas' : formatCurrency(Math.abs(playerBalance))}</dd>
+                                </div>
+                              </dl>
+                              {playerBalance > 0 && (
+                                <button
+                                  aria-label={`Mark lunas ${player.name}`}
+                                  className="button button-primary player-pay-button"
+                                  disabled={storageReadBlocked || !isNonNegativeInteger(playerCost)}
+                                  onClick={() => markPlayerPaid(player)}
+                                  type="button"
+                                >
+                                  Mark lunas
+                                </button>
+                              )}
+                            </section>
                           </div>
-                          {courtPrice > 0 && (
-                            <div>
-                              <dt>Harga lapangan</dt>
-                              <dd>{formatCurrency(courtPrice)}</dd>
-                            </div>
-                          )}
-                          <div>
-                            <dt>Harga per bola</dt>
-                            <dd>{formatCurrency(shuttlecockPrice)}</dd>
-                          </div>
-                          {gamesPlayedEnabled && (
-                            <div className="player-count-row">
-                              <dt>Jumlah bermain</dt>
-                              <dd>
-                                <Counter
-                                  label="Jumlah bermain"
-                                  playerName={player.name}
-                                  value={player.gamesPlayed}
-                                  onChange={(change) => updatePlayerCount(player.id, 'gamesPlayed', change)}
-                                />
-                              </dd>
-                            </div>
-                          )}
-                          <div className="player-count-row">
-                            <dt>Jumlah bola</dt>
-                            <dd>
-                              <Counter
-                                label="Jumlah bola"
-                                playerName={player.name}
-                                value={player.shuttlecocksUsed}
-                                onChange={(change) => updatePlayerCount(player.id, 'shuttlecocksUsed', change)}
-                              />
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>Total harga bola</dt>
-                            <dd>{formatCurrency(shuttlecockPrice * player.shuttlecocksUsed)}</dd>
-                          </div>
-                          <div className="player-cost-grand-total">
-                            <dt>Total biaya</dt>
-                            <dd>{formatCurrency(playerCost)}</dd>
-                          </div>
-                          <div>
-                            <dt>Sudah dibayar</dt>
-                            <dd>{formatCurrency(player.amountPaid)}</dd>
-                          </div>
-                          <div className="player-cost-grand-total">
-                            <dt>Sisa/kelebihan pembayaran</dt>
-                            <dd>{getPaymentDescription(playerBalance)}</dd>
-                          </div>
-                        </dl>
+                        </div>
                         <div className="player-actions">
                           <button
                             className="row-action"
