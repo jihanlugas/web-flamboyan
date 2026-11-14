@@ -342,19 +342,6 @@ button:disabled {
   display: none;
 }
 
-.player-avatar {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  background: #f6dfd3;
-  color: #783f2a;
-  font-size: 14px;
-  font-weight: 750;
-}
-
 .player-name {
   min-width: 0;
   flex: 1 1 auto;
@@ -368,13 +355,24 @@ button:disabled {
   flex-direction: column;
   align-items: flex-end;
   gap: 3px;
+  min-width: 0;
+  max-width: 65%;
   margin-left: auto;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
-.player-total-label {
-  color: var(--muted);
-  font-size: 10px;
+.player-payment-status {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.player-payment-status.is-unpaid {
+  color: #a12c27;
+}
+
+.player-payment-status.is-paid {
+  color: var(--green);
 }
 
 .player-total strong {
@@ -400,15 +398,35 @@ button:disabled {
 }
 
 .player-details {
-  padding: 0 22px 18px 58px;
+  padding: 20px 22px 18px 58px;
   border-top: 1px solid #edf0ec;
   animation: rise-in 180ms ease-out both;
 }
 
-.player-cost-details {
+.player-details-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 28px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: 36px;
+}
+
+.player-detail-groups {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.player-detail-section {
+  min-width: 0;
+}
+
+.player-detail-section h3 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.player-cost-details {
   margin: 0;
 }
 
@@ -427,10 +445,12 @@ button:disabled {
 }
 
 .player-cost-details dd {
+  min-width: 0;
   margin: 0;
   color: var(--foreground);
   font-weight: 650;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
   text-align: right;
 }
 
@@ -484,6 +504,10 @@ button:disabled {
 .player-cost-grand-total dd {
   color: var(--green-deep);
   font-weight: 750;
+}
+
+.player-pay-button {
+  margin-top: 8px;
 }
 
 .player-actions {
@@ -838,21 +862,17 @@ button:disabled {
     padding: 10px 12px;
   }
 
-  .player-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
   .player-total strong {
     font-size: 12px;
   }
 
   .player-details {
-    padding: 0 14px 14px;
+    padding: 18px 14px 14px;
   }
 
-  .player-cost-details {
+  .player-details-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .modal-panel {
