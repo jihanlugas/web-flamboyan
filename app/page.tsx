@@ -14,8 +14,11 @@ type Dialog =
   | { type: 'settings' }
   | { type: 'add-player' }
   | { type: 'edit-player'; playerId: string }
+  | { type: 'payment'; playerId: string }
   | { type: 'reset' }
   | null;
+
+type PlayerSort = 'name' | 'cost' | 'payment';
 
 type SavedData = {
   players: Player[];
@@ -31,7 +34,6 @@ type ParsedSavedData = {
 
 type PlayerDraft = {
   name: string;
-  amountPaid: number;
 };
 
 type PriceDraft = {
@@ -45,7 +47,6 @@ const storageChangeEvent = 'main-bareng-data-change';
 const storageReadErrorSnapshot = '__main_bareng_storage_read_error__';
 const emptyPlayerDraft: PlayerDraft = {
   name: '',
-  amountPaid: 0,
 };
 const emptySavedData: SavedData = {
   players: [],
@@ -58,14 +59,21 @@ const currencyFormatter = new Intl.NumberFormat('id-ID', {
   currency: 'IDR',
   maximumFractionDigits: 0,
 });
+const playerNameCollator = new Intl.Collator('id', { sensitivity: 'base' });
 
 const formatCurrency = (amount: number) => currencyFormatter.format(amount);
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonNegativeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const isPlayerSort = (value: string): value is PlayerSort =>
+  value === 'name' || value === 'cost' || value === 'payment';
 const getPlayerCost = (player: Player, data: SavedData) =>
   data.courtPrice + data.shuttlecockPrice * player.shuttlecocksUsed;
+const getPlayerPaymentOrder = (player: Player, data: SavedData) => {
+  const balance = getPlayerCost(player, data) - player.amountPaid;
+  return balance > 0 ? 0 : balance === 0 ? 1 : 2;
+};
 const getPaymentDescription = (balance: number) =>
   balance < 0
     ? `Kelebihan pembayaran ${formatCurrency(Math.abs(balance))}`
@@ -325,6 +333,8 @@ export default function Home() {
     gamesPlayedEnabled: false,
   });
   const [playerDraft, setPlayerDraft] = useState<PlayerDraft>(emptyPlayerDraft);
+  const [paymentDraft, setPaymentDraft] = useState(0);
+  const [playerSort, setPlayerSort] = useState<PlayerSort>('name');
   const [dialog, setDialog] = useState<Dialog>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [storageWriteError, setStorageWriteError] = useState<string | null>(null);
@@ -360,11 +370,13 @@ export default function Home() {
   };
 
   const openEditPlayer = (player: Player) => {
-    setPlayerDraft({
-      name: player.name,
-      amountPaid: player.amountPaid,
-    });
+    setPlayerDraft({ name: player.name });
     openDialog({ type: 'edit-player', playerId: player.id });
+  };
+
+  const openPaymentDialog = (player: Player) => {
+    setPaymentDraft(player.amountPaid);
+    openDialog({ type: 'payment', playerId: player.id });
   };
 
   const persistData = (data: SavedData) => {
@@ -388,23 +400,43 @@ export default function Home() {
       return;
     }
 
-    if (!isNonNegativeInteger(playerDraft.amountPaid)) {
-      setDialogError('Pembayaran harus bilangan bulat nol atau lebih.');
-      return;
-    }
-
-    const playerData = {
-      name,
-      amountPaid: playerDraft.amountPaid,
-    };
+    const playerData = { name };
     const nextPlayers =
       dialog?.type === 'edit-player'
         ? players.map((player) =>
             player.id === dialog.playerId ? { ...player, ...playerData } : player,
           )
-        : [...players, { id: createPlayerId(), gamesPlayed: 0, shuttlecocksUsed: 0, ...playerData }];
+        : [...players, {
+            id: createPlayerId(),
+            gamesPlayed: 0,
+            shuttlecocksUsed: 0,
+            amountPaid: 0,
+            ...playerData,
+          }];
 
     persistData({ ...parsedSavedData.data, players: nextPlayers });
+  };
+
+  const savePayment = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isNonNegativeInteger(paymentDraft)) {
+      setDialogError('Pembayaran harus bilangan bulat nol atau lebih.');
+      return;
+    }
+
+    if (dialog?.type !== 'payment') return;
+    if (!players.some((player) => player.id === dialog.playerId)) {
+      setDialogError('Pemain tidak lagi tersedia. Tutup dialog dan coba lagi.');
+      return;
+    }
+
+    persistData({
+      ...parsedSavedData.data,
+      players: players.map((player) =>
+        player.id === dialog.playerId ? { ...player, amountPaid: paymentDraft } : player,
+      ),
+    });
   };
 
   const savePrices = (event: React.FormEvent<HTMLFormElement>) => {
@@ -471,6 +503,30 @@ export default function Home() {
   const totalPaid = players.reduce((total, player) => total + player.amountPaid, 0);
   const remainingBalance = totalCost - totalPaid;
   const whatsappUrl = createWhatsAppReport(parsedSavedData.data);
+  const sortedPlayers = players
+    .map((player, index) => ({ player, index }))
+    .sort((left, right) => {
+      let comparison = 0;
+
+      if (playerSort === 'name') {
+        comparison = playerNameCollator.compare(left.player.name, right.player.name);
+      } else if (playerSort === 'cost') {
+        comparison =
+          getPlayerCost(left.player, parsedSavedData.data) -
+          getPlayerCost(right.player, parsedSavedData.data);
+      } else {
+        comparison =
+          getPlayerPaymentOrder(left.player, parsedSavedData.data) -
+          getPlayerPaymentOrder(right.player, parsedSavedData.data);
+      }
+
+      return comparison || left.index - right.index;
+    })
+    .map(({ player }) => player);
+  const paymentPlayer =
+    dialog?.type === 'payment'
+      ? players.find((player) => player.id === dialog.playerId)
+      : undefined;
 
   return (
     <main className="app-shell">
@@ -536,14 +592,31 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <ul className="player-list">
-              {players.map((player) => {
-                const playerCost = getPlayerCost(player, parsedSavedData.data);
-                const playerBalance = playerCost - player.amountPaid;
+            <>
+              <div className="player-sort-control">
+                <label htmlFor="player-sort">Urutkan pemain</label>
+                <select
+                  id="player-sort"
+                  onChange={(event) => {
+                    if (isPlayerSort(event.target.value)) setPlayerSort(event.target.value);
+                  }}
+                  value={playerSort}
+                >
+                  <option value="name">Nama (A–Z)</option>
+                  <option value="cost">Total biaya (terkecil–terbesar)</option>
+                  <option value="payment">
+                    Status (belum lunas–lunas–kelebihan bayar)
+                  </option>
+                </select>
+              </div>
+              <ul className="player-list">
+                {sortedPlayers.map((player) => {
+                  const playerCost = getPlayerCost(player, parsedSavedData.data);
+                  const playerBalance = playerCost - player.amountPaid;
 
-                return (
-                  <li className="player-list-item" key={player.id}>
-                    <details className="player-collapsible">
+                  return (
+                    <li className="player-list-item" key={player.id}>
+                      <details className="player-collapsible">
                       <summary className="player-collapsible-header">
                         <span className="player-name">{player.name}</span>
                         <span className="player-total">
@@ -665,6 +738,14 @@ export default function Home() {
                             Edit pemain
                           </button>
                           <button
+                            className="row-action"
+                            disabled={storageReadBlocked}
+                            onClick={() => openPaymentDialog(player)}
+                            type="button"
+                          >
+                            Pembayaran
+                          </button>
+                          <button
                             aria-label={`Hapus ${player.name}`}
                             className="row-action row-action-danger"
                             disabled={storageReadBlocked}
@@ -675,11 +756,12 @@ export default function Home() {
                           </button>
                         </div>
                       </div>
-                    </details>
-                  </li>
-                );
-              })}
-            </ul>
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </section>
 
@@ -858,7 +940,7 @@ export default function Home() {
                 <p className="modal-description">
                   {dialog.type === 'add-player'
                     ? 'Isi nama pemain untuk menambahkannya ke daftar.'
-                    : 'Ubah nama pemain dan jumlah yang sudah dibayar.'}
+                    : 'Ubah nama pemain.'}
                 </p>
                 <form className="modal-form" onSubmit={savePlayer}>
                   <label className="field-label" htmlFor="new-player-name">
@@ -875,28 +957,6 @@ export default function Home() {
                       value={playerDraft.name}
                     />
                   </label>
-                  {dialog.type === 'edit-player' && (
-                    <label className="field-label" htmlFor="player-amount-paid">
-                      Sudah dibayar
-                      <span className="input-wrap">
-                        <span>Rp</span>
-                        <input
-                          id="player-amount-paid"
-                          min="0"
-                          onChange={(event) =>
-                            setPlayerDraft((current) => ({
-                              ...current,
-                              amountPaid: Number(event.target.value) || 0,
-                            }))
-                          }
-                          required
-                          step="1"
-                          type="number"
-                          value={playerDraft.amountPaid}
-                        />
-                      </span>
-                    </label>
-                  )}
                   {dialogError && <p className="field-error" role="alert">{dialogError}</p>}
                   <div className="modal-actions">
                     <button
@@ -911,6 +971,59 @@ export default function Home() {
                     </button>
                   </div>
                 </form>
+              </>
+            )}
+
+            {dialog.type === 'payment' && (
+              <>
+                <p className="eyebrow">PEMBAYARAN PEMAIN</p>
+                <h2 id="dialog-title">
+                  {paymentPlayer ? `Pembayaran ${paymentPlayer.name}` : 'Pemain tidak tersedia'}
+                </h2>
+                {paymentPlayer ? (
+                  <>
+                    <p className="modal-description">
+                      Masukkan jumlah pembayaran yang sudah diterima dari pemain.
+                    </p>
+                    <form className="modal-form" onSubmit={savePayment}>
+                      <label className="field-label" htmlFor="player-amount-paid">
+                        Sudah dibayar
+                        <span className="input-wrap">
+                          <span>Rp</span>
+                          <input
+                            autoFocus
+                            id="player-amount-paid"
+                            min="0"
+                            onChange={(event) =>
+                              setPaymentDraft(Number(event.target.value) || 0)
+                            }
+                            required
+                            step="1"
+                            type="number"
+                            value={paymentDraft}
+                          />
+                        </span>
+                      </label>
+                      {dialogError && <p className="field-error" role="alert">{dialogError}</p>}
+                      <div className="modal-actions">
+                        <button
+                          className="button button-secondary"
+                          onClick={() => setDialog(null)}
+                          type="button"
+                        >
+                          Batal
+                        </button>
+                        <button className="button button-primary" type="submit">
+                          Simpan pembayaran
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <p className="modal-description">
+                    Pemain sudah tidak tersedia. Tutup dialog dan pilih pemain dari daftar.
+                  </p>
+                )}
               </>
             )}
 
