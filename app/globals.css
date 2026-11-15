@@ -41,7 +41,8 @@ button {
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid #ef9a70;
   outline-offset: 3px;
 }
@@ -250,6 +251,27 @@ button:disabled {
 .row-action:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.player-sort-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 18px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.player-sort-control select {
+  min-height: 40px;
+  max-width: 100%;
+  padding: 0 32px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--foreground);
+  font: inherit;
 }
 
 .empty-state {
@@ -860,6 +882,16 @@ button:disabled {
     min-height: 66px;
     gap: 9px;
     padding: 10px 12px;
+  }
+
+  .player-sort-control {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .player-sort-control select {
+    width: 100%;
   }
 
   .player-total strong {
